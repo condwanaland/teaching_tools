@@ -1,0 +1,14 @@
+library(nortest)
+
+norm1 <- rnorm(30000, 100, 40)
+ad.test(norm1)
+
+t1 <- rt(300000, 50)
+ad.test(t1)
+hist(t1, breaks = 100)
+qqnorm(t1)
+qqline(t1)
+
+
+autocorr <- diffinv(rnorm(10000))
+plot(autocorr)
