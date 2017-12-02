@@ -1,0 +1,32 @@
+---
+output: pdf_document
+---
+
+# Issues with normality testing
+
+
+(note, this is stolen from the excellent blog post titled "Normality tests don't do what they think you do", on http://blog.fellstat.com/?p=61. I've used that post to illustrate this point many times, so I just wanted a quickly accessible version of it. All credit goes to the original author)
+
+
+Many statistical texts teach that if you are fitting a model that relies on the assumption of normality, 
+
+Let us quickly recall what a standardized normal distribution would look like. We expect data that shows bell shaped curve, centered and symmetrical around zero. Data like this perhaps?
+```{r}
+fake_data <- rt(300000, 50)
+hist(fake_data, breaks = 100, main = "")
+qqnorm(fake_data)
+qqline(fake_data)
+```
+
+That is the most normal fake data I have ever seen. I've never seen real data, from randomised ecology experiments that even resembles something that neat. Us humans immediately recognise that as data that could be modelled with a normal response variable. 
+
+So what happens when we run a normality test on it? We are testing the null hypothesis that the data follows a normal distribution. A high p-value (> 0.05) means that the data is normal, a low one means it is non-normal.
+
+```{r}
+library(nortest)
+ad.test(fake_data)
+```
+
+Whoa, thats a *tiny* p-value! So what happened here? The issue that this presents is actually quite a common one, but tends to not always be well understood. Basically, *p-values are highly sensitive to sample size*. The larger your sample size, the more likely you are to find a "significant" effect, and reject your null hypothesis. With a sample size of 300,000, *any* deviation from the normal would be enough for the test to reject H0. 
+
+So what does this mean? It means to *not blindly trust statistical tests!*. Use plots, like the two above. They will teach you far more about your data than a test ever will. 
