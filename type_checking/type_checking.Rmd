@@ -1,0 +1,69 @@
+---
+title: "On the importance of type checking"
+author: "Conor"
+date: "November 11, 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+Recently I've been investing some time in developing the 2nd version of my `summariser` package. I came across an extremely scary piece of behaviour which, in hindsight, I knew, but I find is also extremely easy to forget. It serves as a very important reminder as to why checking the type for your function inputs is so important. 
+
+`summariser` relies on the `plotrix` package for its `std.error` function for calculating standard errors. However, I decided this was an unnecessary dependency for one function, so I implemented my own version
+
+```{r}
+std_error <- function(x){
+
+  if (length(x) < 3){
+    stop("There must be at least three observations to compute a standard error")
+  }
+
+  sd(x, na.rm = TRUE)/sqrt(length(na.omit(x)))
+}
+```
+
+
+This is a very simple function. It checks there is enough observations to calculate successfully, then removes `NA`'s, and divides the standard deviation by the number of observations. So what happens if we give it some...unexpected input.
+
+```{r}
+std_error(c(TRUE, FALSE, FALSE, TRUE, TRUE))
+```
+
+Huh? So not only does the function run without errors or warnings, but it actually produces a result! How do words like `TRUE` work in a mathematical computation?
+
+What happens here is that R is *silently coercing to numeric*. During computation, `TRUE` gets coerced to 1, and `FALSE` gets coerced to 0. So the function is actually computing
+
+```{r}
+std_error(c(1, 0, 0, 1, 1))
+```
+
+Oy vey!
+
+In a dynamically typed language like R, it is extremely important to build type checking exceptions into your functions. A much safer version of the above function is thus
+
+```{r}
+std_error <- function(x){
+
+  if (length(x) < 3){
+    stop("There must be at least three observations to compute a standard error")
+  }
+
+  if (class(x) != "numeric"){
+    stop("Input must be numeric")
+  }
+
+  sd(x, na.rm = TRUE)/sqrt(length(na.omit(x)))
+}
+```
+
+Now we've added a check to make sure the input is numeric. If not, it will stop and throw an error. Lets try our again with our input from above
+
+```{r, error=TRUE}
+std_error(c(TRUE, FALSE, FALSE, TRUE, TRUE))
+```
+
+Ha! Now it's smart enough to not give us a silent, very incorrect result. Phew!
