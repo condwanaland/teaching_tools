@@ -1,0 +1,28 @@
+---
+title: "Where to put data for tests"
+author: "Conor"
+date: "January 3, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+While working on my `summariser` package I wanted to include some external data in my tests. The tests in `summariser` generate some dataframes, and I wanted to test that the generated tables match to known output I had stored in .rds files. 
+
+My initial method was to add a 'testdata/' folder at the same level as 'testthat/' (i.e., under the top level 'tests/'), and use `readRDS(system.file("tests", "testdata", "mydata.rds", package = "summariser"))` to read in the data during my tests. 
+
+When running these tests via `devtools::test()` they passed with no errors at all. However, when I checked the package using `devtools::check()` I received this ERROR
+```
+── 1. Error: (unknown) (@test_calculations.R#14)  ─────────────────────────────────────────────
+cannot open the connection
+1: readRDS(base::system.file("tests", "testdata", "grouped_iris.rds", package = "summariser")) at testthat/test_calculations.R:14
+2: gzfile(file, "rb")
+```
+
+Whenever you see an error with "cannot open the connection" that generally means there's something going wrong with file paths, and the path you've specified doesn't actually contain that file. 
+
+I had no idea why these passed with `test()` but failed with `check()`, but I assumed it was to do with the way top level folders are treated during R package builds. However, I did know that the "inst/" directory tends to be the de facto place to put extra things for packages. So, playing a hunch, I moved all my rds files from 'tests/testdata/' to 'inst/extdata/'. Lo and behold, after updating the `system.file()` calls, all the tests passed completely fine. 
+
+As said above, I'm not sure what is going on here, but there is some advice to take away. If you need to include data for tests, put them under 'inst/'!
